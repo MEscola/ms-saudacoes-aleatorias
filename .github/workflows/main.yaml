@@ -22,7 +22,7 @@ jobs:
     name: Lint Code
     runs-on: ubuntu-latest
     # Executa este job apenas em branches que não são a 'main'
-    #iif: github.ref_name != 'main'
+    if: github.ref_name != 'main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
