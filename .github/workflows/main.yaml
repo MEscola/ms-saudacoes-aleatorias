@@ -168,3 +168,17 @@ jobs:
         run: terraform -chdir=infra destroy -auto-approve
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
+
+# JOB FINAL DE VALIDAÇÃO
+  success:
+    name: ✅ Pipeline Finalizada com Sucesso
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: success() # Executa apenas se todos os anteriores foram bem-sucedidos
+    steps:
+      - name: Mensagem de Conclusão
+        run: |
+          echo "--------------------------------------------"
+          echo "✅ Todas as etapas concluídas com sucesso!"
+          echo "🚀 Lint, Testes, Build, Push e Deploy OK!"
+          echo "--------------------------------------------"              
