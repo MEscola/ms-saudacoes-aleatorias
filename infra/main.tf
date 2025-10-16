@@ -22,7 +22,7 @@ resource "koyeb_app" "my_app" {
 }
 
 resource "koyeb_service" "my-service" {
-  app_name = var.app_name
+  app_name = koyeb_app.my_app.name
   definition {
     name = var.service_name
     instance_types {
@@ -53,6 +53,6 @@ resource "koyeb_service" "my-service" {
   }
 
   depends_on = [
-    koyeb_app.my-app
+    koyeb_app.my_app
   ]
 }
