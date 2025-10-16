@@ -11,8 +11,36 @@ provider "koyeb" {
   #
 }
 
-resource "koyeb_app" "my-app" {
-  name = var.app_name
+variable "app_name" {
+  description = "Nome base do aplicativo"
+  default     = "ms-saudacoes-aleatorias"
+}
+
+variable "service_name" {
+  description = "Nome do serviço"
+  default     = "saudacoes-service"
+}
+
+variable "container_port" {
+  description = "Porta do container"
+  default     = 8080
+}
+
+variable "docker_image_name" {
+  description = "Nome da imagem Docker"
+}
+
+variable "docker_image_tag" {
+  description = "Tag da imagem Docker"
+}
+
+locals {
+  unique_app_name = "${var.app_name}-${var.docker_image_tag}"
+}
+
+
+resource "koyeb_app" "my_app" {
+  name = local.unique_app_name
 }
 
 resource "koyeb_service" "my-service" {
