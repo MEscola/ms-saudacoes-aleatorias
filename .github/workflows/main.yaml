@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - dev
-      - "*" # Para capturar outras branches
+      - "*" # Para capturar outras branches de feature
   pull_request:
     branches:
       - main
@@ -18,9 +18,9 @@ env:
   SERVICE_NAME: saudacoes-aleatorias
 
 jobs:
-  # -----------------------------
+
   # Job para rodar linters
-  # -----------------------------
+
   lint:
     name: Lint Code
     runs-on: ubuntu-latest
@@ -36,7 +36,6 @@ jobs:
 
       - name: Go Fmt & Vet
         run: |
-          echo "Linting code with go fmt and go vet..."
           go fmt $(go list ./...)
           go vet $(go list ./...)
 
@@ -46,9 +45,9 @@ jobs:
           version: v1.64
           args: --verbose
 
-  # -----------------------------
+
   # Job para rodar testes
-  # -----------------------------
+
   test:
     name: Run Go Tests
     runs-on: ubuntu-latest
@@ -68,7 +67,6 @@ jobs:
 
       - name: Run tests and generate report
         run: |
-          echo "Running tests and generating report..."
           CGO_ENABLED=1 gotestsum --junitfile report.xml --format testname
 
       - name: Upload test results
@@ -78,9 +76,9 @@ jobs:
           name: test-reports
           path: report.xml
 
-  # -----------------------------
+
   # Job para build e push Docker
-  # -----------------------------
+
   build-and-push:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
@@ -102,6 +100,15 @@ jobs:
           username: ${{ env.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASS }}
 
+      - name: Set branch-safe variable
+        id: vars
+        run: |
+          SAFE_BRANCH=$(echo $GITHUB_REF_NAME | sed 's/\//-/g')
+          if [ "$SAFE_BRANCH" = "main" ]; then
+            SAFE_BRANCH=""
+          fi
+          echo "BRANCH_SAFE=$SAFE_BRANCH" >> $GITHUB_ENV
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -109,14 +116,14 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.BRANCH_SAFE }}-${{ github.run_id }}
-            ${{ github.ref_name == 'main' && format('{0}:latest', env.DOCKER_IMAGE_NAME) || format('{0}:dev-latest', env.DOCKER_IMAGE_NAME) }}
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.BUILD_TAG }}
+            ${{ env.DOCKER_IMAGE_NAME }}:${{ env.IMAGE_TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # -----------------------------
+
   # Job para deploy
-  # -----------------------------
+
   deploy:
     name: Deploy Application
     runs-on: ubuntu-latest
@@ -146,12 +153,11 @@ jobs:
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
           TF_VAR_docker_image_name: ${{ env.DOCKER_IMAGE_NAME }}
-          TF_VAR_docker_image_tag: ${{ env.BRANCH_SAFE }}-${{ github.run_id }}
+          TF_VAR_docker_image_tag: ${{ env.DOCKER_TAG }}
 
 
-  # -----------------------------
   # Job para destruir infraestrutura
-  # -----------------------------
+
   destroy:
     name: Destroy Staging/Dev
     runs-on: ubuntu-latest
@@ -175,9 +181,9 @@ jobs:
         env:
           KOYEB_TOKEN: ${{ secrets.KOYEB_TOKEN }}
 
-  # -----------------------------
+
   # Job final de validação
-  # -----------------------------
+
   success:
     name: ✅ Pipeline Finalizada com Sucesso
     runs-on: ubuntu-latest
