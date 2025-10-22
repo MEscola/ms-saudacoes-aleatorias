@@ -11,12 +11,20 @@ provider "koyeb" {
   #
 }
 
-resource "koyeb_app" "my-app" {
-  name = var.app_name
+
+locals {
+  # Garante que o nome do app tenha no máximo 23 caracteres
+  safe_tag = substr(var.docker_image_tag, 0, 8) # corta tag grande
+  unique_app_name = substr("${var.app_name}-${local.safe_tag}", 0, 23)
+}
+
+
+resource "koyeb_app" "my_app" {
+  name = local.unique_app_name
 }
 
 resource "koyeb_service" "my-service" {
-  app_name = var.app_name
+  app_name = koyeb_app.my_app.name
   definition {
     name = var.service_name
     instance_types {
@@ -42,11 +50,11 @@ resource "koyeb_service" "my-service" {
     }
     regions = ["was"]
     docker {
-      image = "${var.docker_image_name}:${var.docker_image_tag}"
+  image = "${var.docker_image_name}:${var.docker_image_tag != "" ? var.docker_image_tag : "dev"}"
     }
   }
 
   depends_on = [
-    koyeb_app.my-app
+    koyeb_app.my_app
   ]
 }
